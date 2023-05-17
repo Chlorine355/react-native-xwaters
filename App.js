@@ -1,30 +1,34 @@
 import {
-  Button,
-  Dimensions, FlatList,
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
   Image,
-  Keyboard, ScrollView,
-  StyleSheet, Switch,
+  Keyboard,
+  Linking,
+  LogBox,
+  ScrollView,
+  StyleSheet,
+  Switch,
   Text,
-  TextInput, TouchableHighlight, TouchableNativeFeedback, TouchableNativeFeedbackComponent,
+  TextInput,
+  TouchableHighlight,
+  TouchableNativeFeedback,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
-  ActivityIndicator, Linking
+  View
 } from 'react-native';
-import React, {Component, useEffect, useState} from "react";
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, {useState} from "react";
+import {NavigationContainer} from '@react-navigation/native';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from "@react-navigation/native-stack";
-import { useFonts } from 'expo-font';
-import { Icon } from 'react-native-elements';
+import {Icon} from 'react-native-elements';
 import * as Animatable from 'react-native-animatable';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-simple-toast';
 import {WebView} from 'react-native-webview'
-
-
-import { LogBox } from 'react-native';
 import HTMLParser from "fast-html-parser";
+
 LogBox.ignoreAllLogs();//Ignore all log notifications
 
 
@@ -44,6 +48,27 @@ function detectURLs(message) {
 }
 
 
+const storeData = async (key, value) => {
+  try {
+    await AsyncStorage.setItem(key, value)
+  } catch (e) {
+    // saving error
+  }
+}
+
+
+const getCredentials = async () => {
+  try {
+    const e = await AsyncStorage.getItem("email");
+    const p = await AsyncStorage.getItem("password");
+    // console.log(u, p);
+    return [e, p]
+  } catch (err) {
+    // saving error
+  }
+}
+
+
 function Login ({ navigation }) {
     let blue = "#168AEF"
     /* const [loaded] = useFonts({
@@ -55,6 +80,45 @@ function Login ({ navigation }) {
     if (!loaded || !BackgroundImage) {
       return <Text>Loading...</Text>;
     } */
+    // storeData("email", "email");
+    // storeData("password", "password");
+
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [authed, setAuthed] = useState(false);
+
+
+    getCredentials().then((v) => {
+      setEmail(v[0]);
+      setPassword(v[1]);
+      }
+    )
+
+    if (email && password && !authed) {
+      console.log("authing with " + email + " " + password);
+
+      let request = new XMLHttpRequest();
+      request.onreadystatechange = e => {
+        if (request.readyState !== 4) {
+          return;
+        }
+
+        if (request.status === 200) {
+          console.log("ok");
+          console.log(request.response)
+        } else {
+          console.warn(request.statusText);
+        }
+        setAuthed(true);
+      }
+      request.withCredentials = true;
+
+      request.open('POST', 'https://x-waters.com/wp-admin/admin-ajax.php',);
+      request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+      request.send("security=217e74f70a&user_email=" + email + "&user_password=" + password + "&action=ajaxlogin");
+    }
+
+
     return  (
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
           <View style={styles.container}>
@@ -122,8 +186,8 @@ function Login ({ navigation }) {
 
 
 function Home ({ navigation }) {
-  const stories = [{id: 1, pic: "https://x-waters.com/wp-content/uploads/2020/01/xw_ufa_main.jpg"},
-    {id: 2, pic: "https://x-waters.com/wp-content/uploads/2020/01/xw_ufa_main.jpg"},
+  const stories = [{id: 1, pic: "https://krepezh34.ru/image/cache/catalog/photo/no_image-1200x750.png"},
+    {id: 2, pic: "https://x-waters.com/wp-content/themes/x-waters/images/xw_white-18.png"},
     {id: 3, pic: "https://x-waters.com/wp-content/uploads/2020/01/xw_ufa_main.jpg"},
     {id: 4, pic: "https://x-waters.com/wp-content/uploads/2020/01/xw_ufa_main.jpg"},
     {id: 5, pic: "https://x-waters.com/wp-content/uploads/2020/01/xw_ufa_main.jpg"},
@@ -171,11 +235,11 @@ function Home ({ navigation }) {
           'key': i}
       }
     } else {
-      console.warn('error');
+      console.warn(request.status);
     }
     setLoading(false)
   };
-  request.open('GET', 'https://x-waters.com/');
+  request.open('GET', 'https://www.x-waters.com/');
   request.send();
   // console.log(data);
   return (
@@ -406,7 +470,7 @@ function Result( {route, navigation} ) {
             el = el[0];
             document.body.appendChild(el);
             let newStyle = document.createElement('style');
-            newStyle.textContent = '*:not(html, body, .user-event, .user-event *) {display: none} .user-event > div:not(.band:first-child) {pointer-events: none} .user-event {padding-bottom: 100px!important;} *:not(label, ) {color: white!important} td::before {color: white!important} .band_full {display: none!important} p.user-event__title_blue {color: white!important} .loader {background: transparent!important}';
+            newStyle.textContent = '*:not(html, body, .user-event, .user-event *) {display: none} .user-event > div:not(.band:first-child) {pointer-events: none} .user-event {padding-bottom: 100px!important;} *:not(label, input) {color: white!important} td::before {color: white!important} .band_full {display: none!important} p.user-event__title_blue {color: white!important} .loader {background: transparent!important}';
             document.head.appendChild(newStyle); }
             })
             `
